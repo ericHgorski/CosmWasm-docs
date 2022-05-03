@@ -8,7 +8,7 @@ sidebar_position: 4
 There are many cases where you want to view the state of a contract. Both as an external client (using the cli), but
 also while executing a contract. For example, we discussed resolving names like "Alice" or "Bob" in the last section,
 which would require a query to another contract. We will first cover the two types of queries - raw and custom - then
-look at the semantics of querying via an *external client*, as well an *internal client* (another contract). We will pay
+look at the semantics of querying via an _external client_, as well an _internal client_ (another contract). We will pay
 special attention not only to how it works practically, but also the design and security issues of executing queries
 from one contract to another.
 
@@ -19,7 +19,7 @@ from one contract to another.
 The simplest query to implement is just raw read access to the key-value store. If the caller (either external client,
 or other contract) passes in the raw binary key that is used in the contract's storage, we can easily return the raw
 binary value. The benefit of this approach is that it is very easy to implement and universal. The downside is that it
-links the caller to the *implementation* of the storage and requires knowledge of the exact contract being executed.
+links the caller to the _implementation_ of the storage and requires knowledge of the exact contract being executed.
 
 This is implemented inside the `wasmd` runtime and circumvents the VM. As a consequence it requires no support from the
 CosmWasm contract and all contract state is visible. Such a `query_raw` function is exposed to all callers (external and
@@ -27,18 +27,18 @@ internal).
 
 ## Custom Queries {#custom-queries}
 
-There are many cases where it is undesirable to couple tightly to *implementation*, and we would rather depend on an *
-interface*. For example, we will define a standard for "ERC20" `HandleMsg` for calling the contract and we would want to
+There are many cases where it is undesirable to couple tightly to _implementation_, and we would rather depend on an _
+interface_. For example, we will define a standard for "ERC20" `HandleMsg` for calling the contract and we would want to
 define such a standard for a `QueryMsg`. For example, query balance by address, query allowance via granter + grantee,
-query token info (ticker, decimals, etc). By defining a standard *interface*, we allow many implementations, including
+query token info (ticker, decimals, etc). By defining a standard _interface_, we allow many implementations, including
 complex contracts, where the "ERC20" interface is only a small subset of their functionality.
 
 To enable custom queries, we allow each contract to expose a `query` function, that can access its data store in
 read-only mode. It can load any data it wishes and even perform calculations on it. This method is exposed
-as `query_custom` to call callers (external and internal). The data format (both query and response) is anything the
+as `query_custom` to all callers (external and internal). The data format (both query and response) is anything the
 contract desires, and should be documented in the public schema, along with `HandleMsg` and `InitMsg`.
 
-Note that executing a contract may consume an unbounded amount gas. Whereas `query_raw` will read one key and has a
+Note that executing a contract may consume an unbounded amount of gas. Whereas `query_raw` will read one key and has a
 small, mostly fixed cost, we need to enforce a gas limit on these queries. This is done differently for external and
 internal calls and discussed below.
 
@@ -66,7 +66,7 @@ snapshot of the state after the last committed block.
 
 While many interactions between contracts can easily be modelled by sending messages, there are some cases where we
 would like to synchronously query other modules, without altering their state. For example, if I want to resolve a name
-to a [Address](03-addresses.md), or if I want to check KYC status of some account (in another contract) before enabling
+to an [Address](03-addresses.md), or if I want to check KYC status of some account (in another contract) before enabling
 an action. One could model this as a series of messages, but it is quite complex and makes such simple use-cases almost
 unusable in the system.
 
@@ -75,12 +75,12 @@ has exclusive access to its own internal state. (Both `query_raw` and `query_cus
 being a theoretical issue, this may lead to concurrency and reentrancy issues if not handled correctly. We do not want
 to push such safety critical reasoning into the laps of the contract developers, but rather provide these security
 guarantees in the platform. However, providing old data also leads to many possible errors and bugs, especially since we
-use the same `Querier` interface to interact with the native SDK modules, *including querying the contract's own
-balance*.
+use the same `Querier` interface to interact with the native SDK modules, _including querying the contract's own
+balance_.
 
-As such, we provide the `Querier` with read-only access to the state snapshot *right before execution of the current
-CosmWasm message*. Since we take a snapshot and both the executing contract and the queried contract have read-only
-access to the data *before the contract execution*, this is still safe with Rust's borrowing rules (as a placeholder for
+As such, we provide the `Querier` with read-only access to the state snapshot _right before execution of the current
+CosmWasm message_. Since we take a snapshot and both the executing contract and the queried contract have read-only
+access to the data _before the contract execution_, this is still safe with Rust's borrowing rules (as a placeholder for
 secure design). The current contract only writes to a cache, which is flushed afterwards on success.
 
 Another issue is to avoid reentrancy. Since these queries are called synchronously, they can call back into the calling
